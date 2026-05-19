@@ -27,16 +27,23 @@ export async function exchangeGitHubCopilotToken({
   }
 
   const payload = (await response.json()) as {
-    token?: string;
+    token?: number | string;
     expires_at?: number;
   };
 
-  if (!payload.token?.trim()) {
+  if (typeof payload.token !== 'string' || !payload.token.trim()) {
     throw new GitHubCopilotOAuthError('auth_failed', 'GitHub Copilot token exchange did not return a token.');
+  }
+
+  if (typeof payload.expires_at !== 'number' || !Number.isFinite(payload.expires_at) || payload.expires_at <= 0) {
+    throw new GitHubCopilotOAuthError(
+      'auth_failed',
+      'GitHub Copilot token exchange did not return a valid expiration.',
+    );
   }
 
   return {
     token: payload.token,
-    expiresAt: (payload.expires_at ?? 0) * 1000,
+    expiresAt: payload.expires_at * 1000,
   };
 }
