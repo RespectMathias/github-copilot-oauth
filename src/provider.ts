@@ -34,18 +34,21 @@ export function createGitHubCopilot(settings: GitHubCopilotProviderSettings = {}
   // Fall back to Chat Completions for older models.
   const createLanguageModel = (modelId: GitHubCopilotModelId) =>
     isCopilotResponsesModel(modelId) ? createResponsesModel(modelId) : createChatModel(modelId);
-  const provider = (modelId: GitHubCopilotModelId) => createLanguageModel(modelId);
+  const provider: GitHubCopilotProvider = Object.assign(
+    (modelId: GitHubCopilotModelId) => createLanguageModel(modelId),
+    {
+      specificationVersion: 'v3' as const,
+      languageModel: createLanguageModel,
+      chat: createChatModel,
+      responses: createResponsesModel,
+      embeddingModel: (modelId: string) => {
+        throw new NoSuchModelError({ modelId, modelType: 'embeddingModel' });
+      },
+      imageModel: (modelId: string) => {
+        throw new NoSuchModelError({ modelId, modelType: 'imageModel' });
+      },
+    },
+  );
 
-  provider.specificationVersion = 'v3' as const;
-  provider.languageModel = createLanguageModel;
-  provider.chat = createChatModel;
-  provider.responses = createResponsesModel;
-  provider.embeddingModel = (modelId: string) => {
-    throw new NoSuchModelError({ modelId, modelType: 'embeddingModel' });
-  };
-  provider.imageModel = (modelId: string) => {
-    throw new NoSuchModelError({ modelId, modelType: 'imageModel' });
-  };
-
-  return provider as GitHubCopilotProvider;
+  return provider;
 }
