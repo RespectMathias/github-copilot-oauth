@@ -40,12 +40,12 @@ function passthroughJson(response: Response): Response {
   });
 }
 
-// Extracts token from Authorization header. Handles malformed "Bearer" prefixes gracefully.
+// Extracts token from Authorization header. Rejects non-Bearer schemes.
 function parseBearer(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return '';
   const match = /^Bearer\s+(.+)$/i.exec(trimmed);
-  return (match?.[1] ?? trimmed).trim();
+  return match ? match[1].trim() : '';
 }
 
 // Extracts enterprise URL from request: header > query param > undefined.
