@@ -119,8 +119,31 @@ class TokenManager {
   }
 }
 
-function resolveBaseURL(settings: GitHubCopilotOAuthSettings): string {
-  return withoutTrailingSlash(settings.baseURL ?? copilotBase(settings.enterpriseUrl ?? settings.tokens?.enterpriseUrl, settings));
+async function readStoredTokens(settings: GitHubCopilotOAuthSettings): Promise<GitHubCopilotOAuthTokens | undefined> {
+  if (settings.tokens) {
+    return settings.tokens;
+  }
+
+  const tokenStore = settings.tokenStore as (TokenStore & {
+    getTokens?: () => Promise<GitHubCopilotOAuthTokens | undefined>;
+  }) | undefined;
+
+  if (typeof tokenStore?.getTokens === 'function') {
+    return tokenStore.getTokens();
+  }
+
+  return undefined;
+}
+
+async function resolveBaseURL(settings: GitHubCopilotOAuthSettings): Promise<string> {
+  if (settings.baseURL) {
+    return withoutTrailingSlash(settings.baseURL);
+  }
+
+  const storedTokens = await readStoredTokens(settings);
+  const enterpriseUrl = settings.enterpriseUrl ?? settings.tokens?.enterpriseUrl ?? storedTokens?.enterpriseUrl;
+
+  return withoutTrailingSlash(copilotBase(enterpriseUrl, settings));
 }
 
 // Normalizes an incoming OpenAI-compatible URL against a base URL.
