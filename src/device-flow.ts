@@ -71,13 +71,13 @@ export async function startGitHubCopilotDeviceFlow(
           method: 'POST',
           headers: {
             Accept: 'application/json',
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
-          body: JSON.stringify({
+          body: new URLSearchParams({
             client_id: clientId,
             device_code: code.device_code,
             grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-          }),
+          }).toString(),
         });
 
         if (!tokenResponse.ok) {
